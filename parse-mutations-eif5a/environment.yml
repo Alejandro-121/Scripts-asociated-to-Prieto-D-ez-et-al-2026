@@ -1,0 +1,50 @@
+name: vcf_analysis
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  # Python base
+  - python=3.10
+  - pip
+  
+  # Python packages
+  - pandas>=1.5.0
+  - numpy>=1.23.0
+  
+  # R base
+  - r-base=4.3
+  
+  # R packages from conda-forge
+  - r-readr
+  - r-dplyr
+  - r-ggplot2
+  - r-reshape2
+  - r-pheatmap
+  - r-tidyr
+  - r-dt
+  - r-rmarkdown
+  - r-knitr
+  - r-markdown
+  
+  # Bioconductor packages
+  - bioconductor-org.sc.sgd.db
+  - bioconductor-annotationdbi
+  
+  # Additional R dependencies
+  - r-htmltools
+  - r-jsonlite
+  - r-yaml
+  - r-htmlwidgets
+  - r-crosstalk
+  
+  # System utilities
+  - pandoc>=2.19
+  
+  # Optional but recommended
+  - r-devtools
+  - r-biocmanager
+  
+  # Pip packages (if any conda package is not available)
+  - pip:
+    - pandas>=1.5.0

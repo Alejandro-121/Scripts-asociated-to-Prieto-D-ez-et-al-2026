@@ -1,0 +1,185 @@
+```{r}
+library(ggplot2)
+library(cowplot)
+library(gridExtra)
+```
+
+
+
+
+```{bash}
+#!/bin/bash
+# create new text files containing the relevant quality statics relevant to 
+# deciding cut of values. 
+for file in *.vcf
+do
+    echo "Procesando archivo: $file"
+    prefix=$(basename "$file" .vcf)
+    echo "Prefix is $prefix"
+    
+    bcftools query $file -f'%FS\n' > "$prefix"_FS.txt
+    bcftools query $file -f'%QD\n' > "$prefix"_QD.txt
+    bcftools query $file -f'%MQ\n' > "$prefix"_MQ.txt
+    bcftools query $file -f'%SOR\n' > "$prefix"_SOR.txt
+    bcftools query $file -f'%MQRankSum\n' > "$prefix"_MQ_rank_sum.txt
+    bcftools query $file -f'%ReadPosRankSum\n' > "$prefix"_ReadPos_rank_sum.txt
+    bcftools query $file -f'%DP\n' > "$prefix"_DP.txt
+done
+```
+
+
+```{r}
+# obtain the prefix to work on R
+# list all vcf file
+vcf_files <- list.files(pattern = "\\.vcf$")
+# extract prefixes
+prefixes <- sub("\\.vcf$", "", vcf_files)
+```
+
+
+```{r}
+# load all files
+files <- list()
+for (i in seq_along(prefixes)) {
+  # read
+  FS <- read.table(paste0(prefixes[i], "_FS.txt"))
+  QD <- read.table(paste0(prefixes[i], "_QD.txt"))
+  MQ <- read.table(paste0(prefixes[i], "_MQ.txt"))
+  SOR <- read.table(paste0(prefixes[i], "_SOR.txt"))
+  MQ_rank_sum <- read.table(paste0(prefixes[i], "_MQ_rank_sum.txt"))
+  ReadPos_rank_sum <- read.table(paste0(prefixes[i], "_ReadPos_rank_sum.txt"))
+  DP <- read.table(paste0(prefixes[i], "_DP.txt"))
+  # save al files form same vcf to a list
+  same_vcf <- c(FS, QD, MQ, SOR, MQ_rank_sum, ReadPos_rank_sum, DP)
+  files[[i]] <- same_vcf
+}
+
+# remove no longuer needed variables
+rm(FS, MQ, MQ_rank_sum, QD, ReadPos_rank_sum, SOR, same_vcf, DP, i, vcf_files)
+
+```
+
+```{r}
+# define limits here are writen the ones proposed by GATK
+FS_limit <- 60
+QD_limit <- 2
+MQ_limit <- 40
+SOR_limit <- 4
+MQ_rank_sum_limit <- -12.5
+ReadPos_rank_sum_limit <- -8
+DP_limit <- 75*2.5 # none extist recomended
+
+# set colors for in (values to keep), out (values to remove), can use names or hex
+in_color <- "blue"
+out_color <- "red"
+transparency <- 0.5
+
+# create dir to place output
+dir.create("report")
+
+for (i in seq_along(files)){
+  # get list containig al the estatics from one orignal vcf file
+  file <- files[[i]]
+  
+  # coerce to df
+  FS <- as.data.frame(as.numeric(file[[1]])) 
+  QD <- as.data.frame(as.numeric(file[[2]]))
+  MQ <- as.data.frame(as.numeric(file[[3]]))
+  SOR <- as.data.frame(as.numeric(file[[4]]))
+  MQ_rank_sum <- as.data.frame(as.numeric(file[[5]]))
+  ReadPos_rank_sum <- as.data.frame(as.numeric(file[[6]]))
+  DP <- as.data.frame(as.numeric(file[[7]]))
+  
+  # rename col
+  colnames(FS) <- "FS"
+  colnames(QD) <- "QD"
+  colnames(MQ) <- "MQ"
+  colnames(SOR) <- "SOR"
+  colnames(MQ_rank_sum) <- "MQ_rank_sum"
+  colnames(ReadPos_rank_sum) <- "ReadPos_rank_sum"
+  colnames(DP) <- "DP"
+  
+  # calculate mean
+  mean_FS <- mean(FS$FS, na.rm = TRUE)
+  mean_QD <- mean(QD$QD, na.rm = TRUE)
+  mean_MQ <- mean(MQ$MQ, na.rm = TRUE)
+  mean_SOR <- mean(SOR$SOR, na.rm = TRUE)
+  mean_MQ_rank_sum <- mean(MQ_rank_sum$MQ_rank_sum, na.rm = TRUE)
+  mean_ReadPos_rank_sum <- mean(ReadPos_rank_sum$ReadPos_rank_sum, na.rm = TRUE)
+  mean_DP <- mean(DP$DP, na.rm = TRUE)
+  
+  # add col to define threshold this are the recomended starting point for GATK
+  FS$group <- ifelse(FS$FS > FS_limit, "out", "in")
+  QD$group <- ifelse(QD$QD < QD_limit, "out", "in")
+  MQ$group <- ifelse(MQ$MQ < MQ_limit, "out", "in")
+  SOR$group <- ifelse(SOR$SOR > SOR_limit, "out", "in")
+  MQ_rank_sum$group <- ifelse(MQ_rank_sum < MQ_rank_sum_limit, "out", "in")
+  ReadPos_rank_sum$group <- ifelse(ReadPos_rank_sum < ReadPos_rank_sum_limit, "out", "in")
+  DP$group <- ifelse(DP > DP_limit, "out", "in")
+  
+  # create plots 
+  ggFS <- ggplot(FS, aes(x=FS, fill = group)) +
+    geom_histogram(alpha = transparency) + 
+    geom_vline(xintercept =  FS_limit) +
+    scale_fill_manual(values = c("in" = in_color, "out"= out_color))
+  
+  ggQD <- ggplot(QD, aes(x=QD, fill = group)) +
+    geom_histogram(alpha = transparency) +
+    geom_vline(xintercept = QD_limit) +
+    scale_fill_manual(values = c("in" = in_color, "out"= out_color))
+  
+  ggMQ <- ggplot(MQ, aes(x=MQ, fill = group)) +
+    geom_histogram(alpha = transparency) +
+    geom_vline(xintercept = MQ_limit) +
+    scale_fill_manual(values = c("in" = in_color, "out"= out_color))
+  
+  ggSOR <- ggplot(SOR, aes(x=SOR, fill = group)) +
+    geom_histogram(alpha = transparency) +
+    geom_vline(xintercept = SOR_limit) +
+    scale_fill_manual(values = c("in" = in_color, "out"= out_color))
+  
+  ggMQ_rank_sum <- ggplot(MQ_rank_sum, aes(x=MQ_rank_sum, fill = group)) +
+    geom_histogram(alpha = transparency) +
+    geom_vline(xintercept = MQ_rank_sum_limit) +
+    scale_fill_manual(values = c("in" = in_color, "out"= out_color))
+  
+  ggReadPos_rank_sum <- ggplot(ReadPos_rank_sum, aes(x=ReadPos_rank_sum, fill = group)) +
+    geom_histogram(alpha = transparency) +
+    geom_vline(xintercept = ReadPos_rank_sum_limit) +
+    scale_fill_manual(values = c("in" = in_color, "out"= out_color))
+  
+  ggDP <- ggplot(DP, aes(x=DP, fill = group)) +
+    geom_histogram(alpha = transparency) +
+    geom_vline(xintercept = DP_limit) +
+    scale_fill_manual(values = c("in" = in_color, "out" = out_color))
+  
+  
+  # create final plot 
+  combined_plot <- plot_grid(
+  ggFS, ggQD, ggMQ, ggSOR, ggMQ_rank_sum, ggReadPos_rank_sum, ggDP, 
+  ncol = 2, align = "v"
+  )
+  
+  final_plot <- ggdraw() +
+  draw_label(prefixes[[i]], fontface = 'bold', size = 20, x = 0.5, y = 0.95, hjust = 0.5) +
+  draw_plot(combined_plot, y = 0, height = 0.9)
+  
+  
+  pdf(paste0("report/", prefixes[[i]], "_QCreport.pdf"))
+  plot(final_plot)
+  dev.off()
+  
+  
+  mean_table <- rbind(mean_FS, mean_QD, mean_MQ, mean_SOR, mean_MQ_rank_sum, mean_ReadPos_rank_sum, mean_DP)
+  
+  
+  pdf(paste0("report/", prefixes[[i]], "_QCreport_mean_table.pdf"))
+  grid.table(mean_table)
+  dev.off()
+}
+
+
+```
+
+
+
