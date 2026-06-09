@@ -84,7 +84,8 @@ python variant_calling_1.py \
 ```
 
 After reviewing QC metrics and selecting filter thresholds, run:
-In the paper, the default thresholds encoded in this pipeline were used; this reflects those recommended by GATK.
+
+Note: In the paper, the default thresholds encoded in this pipeline were used; this reflects those recommended by GATK.
 
 ```bash
 python variant_calling_2.py \
