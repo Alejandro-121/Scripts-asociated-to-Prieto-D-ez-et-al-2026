@@ -76,13 +76,13 @@ The pipeline is based on the original sppIDer tool developed by the Gasch Lab (G
 Key scripts:
 
 - `run_sppIDer_array_se.sh` — SLURM array launcher; handles PE and SE samples, merges multi-run data, and distributes work across jobs.
-- `sppIDer.py` — core pipeline per sample (BWA mapping → coverage → depth statistics → plots).
+- `sppIDer.py` — core pipeline per sample (BWA mapping → coverage → depth statistics → plots).Ya he ultimado el git del paper. Quedaria por decidir, 1 que licencia le ponemos si queremos explicitar alguna. 2 Si podemos redistribuir sppider, el scriot actual de sppider esta basado en el original y no explicitateis ninguna licencia en la publicacion.
 - `combineRefGenomes.py` — builds the combined multi-species reference FASTA and indexes.
 - `aggregate_sppIDer_report.py` — run after all samples are processed; produces a summary TSV and an interactive HTML report with per-sample species calls and quality flags.
 
 Dependencies: BWA, SAMtools, BEDTools, Python 3, R (`ggplot2`, `data.table`, `modes`).
 
-This pipelines covers diferents uses in the asociated paper of this repo it was only used to verify the relative ploidy of the samples. 
+This pipeline covers diferents uses in the asociated paper of this repo it was only used to verify the relative ploidy of the samples. 
 
 ---
 
