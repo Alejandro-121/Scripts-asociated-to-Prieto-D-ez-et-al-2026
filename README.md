@@ -71,7 +71,7 @@ Genomic composition analysis pipeline for detecting hybrid strains and species c
 
 This implementation is adapted for HPC-Drago and extends the original pipeline with a SLURM array launcher, automatic SE/PE detection, multi-run merging, and an aggregated HTML report across all samples. For full usage details see [`sppIDer/README.md`](sppIDer/README.md).
 
-The pipeline is based on the original sppIDer tool developed by the Gasch Lab (GLBRC). For methodology, citation, and upstream documentation see [https://github.com/GLBRC/sppIDer](https://github.com/GLBRC/sppIDer).
+The pipeline is based on the original sppIDer tool developed by GLBRC. For methodology, citation, and upstream documentation see [https://github.com/GLBRC/sppIDer](https://github.com/GLBRC/sppIDer).
 
 Key scripts:
 
