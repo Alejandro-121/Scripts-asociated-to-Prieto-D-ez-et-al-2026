@@ -94,6 +94,9 @@ The script will report:
 
 The original pipeline (GLBRC/sppIDer) was designed to run inside a Docker container with all inputs and outputs in a single working directory. This version adapts it to a shared HPC environment and extends it in several ways.
 
+### Update
+Python scripts were refactored from python2 to python3.
+
 ### Structural changes
 
 **Decoupled input paths.** The original required all input files (reference FASTA, fastq reads) to be in the same directory as the working output. Here every input — reference, R1, R2 — takes its own independent path, so reads and references can live anywhere on the filesystem.
