@@ -25,15 +25,6 @@ for i in range(len(fasta)):
         fasta[i] = ">" + headers[ite]
         ite += 1
 
-# CAN SOMEONE EXPLAIN WHY THIS DOES NOT WORK!!!!!!!!!!
-#ite = 0
-#for line in fasta:
-#    if line[0] == ">":
-#        print("old head = " + line)
-#        line = ">" + headers[ite]
-#        ite += 1
-
-
 # check new head
 print("NEW HEAD STARTS HERE!!!!")
 for i in range(len(fasta)):
