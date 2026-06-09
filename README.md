@@ -1,9 +1,9 @@
 
-# Scripts Associated to Prieto-Díez et al. XXX
+# Scripts Associated to Prieto-Díez et al.
 
 **Title:** XXX  
-**Citation:** Prieto-Díez et al. (XXX)  
-**Prepublished DOI:** Prepublished
+**Citation:** Prieto-Díez et al.
+**Prepublished DOI:** In porcess
 
 This repository contains all the bioinformatic scripts used in the above publication. The code is provided to facilitate reproducibility of the analyses described in the paper.
 
