@@ -47,15 +47,55 @@ Runs the following steps in order:
 
 ## Requirements
 
-- **GATK 4.x**
-- **BWA**
-- **SAMtools**
-- **Picard** (only for `CollectAlignmentSummaryMetrics` in the SLURM wrapper)
-- **R** with `ggplot2`, `cowplot`, and `gridExtra` (for QC plots)
-- **bcftools** (used in `plot_metrix.rmd`)
+### SLURM modules
 
-On HPC systems, modules similar to those in `slurm_variant_calling.sh` are
-expected.
+All bioinformatics tools are loaded via `module load` in `slurm_variant_calling.sh`. The modules currently configured for HPC-Drago are:
+
+| Module | Version | Role |
+|--------|---------|------|
+| GCCcore | 11.2.0 | Dependency for BWA, GATK, and R |
+| BWA | 0.7.17 | Read alignment |
+| GATK | 4.2.5.0-Java-11 | Variant calling, BQSR, filtering |
+| Picard | 2.25.1-Java-11 | `CollectAlignmentSummaryMetrics` (called directly in the SLURM script, not from Python — see note below) |
+| GCC | 11.2.0 | Dependency for SAMtools |
+| SAMtools | 1.14 | BAM sorting, indexing, filtering |
+| OpenMPI | 4.1.1 | Dependency for R |
+| R | 4.1.2 | QC plots (`plot_metrix.rmd`) |
+
+> ⚠️ **Picard note:** `CollectAlignmentSummaryMetrics` cannot be called from a Python subprocess on Drago due to the Java environment path. It is called directly in `slurm_variant_calling.sh` between Stage 1 and Stage 2 using `java -jar $EBROOTPICARD/picard.jar`.
+
+> ⚠️ **Updating modules:** Replace the module names above with those available on your cluster:
+> ```bash
+> sed -i 's|module load GCCcore/11.2.0|module load <your_GCCcore_module>|g'  slurm_variant_calling.sh
+> sed -i 's|module load BWA/0.7.17|module load <your_BWA_module>|g'           slurm_variant_calling.sh
+> sed -i 's|module load GATK/4.2.5.0-Java-11|module load <your_GATK_module>|g' slurm_variant_calling.sh
+> sed -i 's|module load picard/2.25.1-Java-11|module load <your_picard_module>|g' slurm_variant_calling.sh
+> sed -i 's|module load GCC/11.2.0|module load <your_GCC_module>|g'           slurm_variant_calling.sh
+> sed -i 's|module load SAMtools/1.14|module load <your_SAMtools_module>|g'    slurm_variant_calling.sh
+> sed -i 's|module load OpenMPI/4.1.1|module load <your_OpenMPI_module>|g'     slurm_variant_calling.sh
+> sed -i 's|module load R/4.1.2|module load <your_R_module>|g'                 slurm_variant_calling.sh
+> ```
+
+### R packages
+
+Required by `plot_metrix.rmd` and must be available in the R module loaded above:
+
+| Package | Role |
+|---------|------|
+| `ggplot2` | QC metric plots |
+| `cowplot` | Plot composition |
+| `gridExtra` | Multi-panel layout |
+| `bcftools` | Called as a system command from within the Rmd |
+
+### Python dependencies
+
+The pipeline scripts (`variant_calling_1.py`, `variant_calling_2.py`, `variant_calling_fun.py`) use **only Python standard library modules** — no additional packages need to be installed:
+
+| Module | Role |
+|--------|------|
+| `subprocess` | Calls all external tools (bwa, gatk, samtools) |
+| `os` | Working directory handling |
+| `argparse` | Command-line argument parsing |
 
 ## Inputs
 
