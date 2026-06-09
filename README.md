@@ -82,6 +82,8 @@ Key scripts:
 
 Dependencies: BWA, SAMtools, BEDTools, Python 3, R (`ggplot2`, `data.table`, `modes`).
 
+This pipelines covers diferents uses in the asociated paper of this repo it was only used to verify the relative ploidy of the samples. 
+
 ---
 
 ## Contact
