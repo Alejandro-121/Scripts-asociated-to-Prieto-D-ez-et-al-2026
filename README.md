@@ -16,10 +16,10 @@ This repository contains all the bioinformatic scripts used in the above publica
 ```
 .
 ├── GATK_haploid/          # Variant calling pipeline (haploid genomes)
-├── parse-mutations-eif5a/ # Mutation parsing and genotype filtering
+├── grouth_rate/           # Curve analisys script
 ├── snpeff/                # VCF annotation with SnpEff
 ├── sppIDer/               # Genomic composition analysis in hybrid strains
-└── grouth_rate/           # Curve analisys script
+└── parse-mutations-eif5a/ # Mutation parsing and genotype filtering
 ```
 
 ---
