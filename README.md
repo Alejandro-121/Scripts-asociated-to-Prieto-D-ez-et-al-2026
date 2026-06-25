@@ -2,7 +2,9 @@
 # Scripts Associated to Prieto-Díez et al.
 
 **Title:** Transcriptional reprogramming of the eIF5A silent paralogue gene bypasses mutations on the main eIF5A isoform
+
 **Citation:** Prieto-Díez et al.
+
 **Prepublished DOI:** In porcess
 
 This repository contains all the bioinformatic scripts used in the above publication. The code is provided to facilitate reproducibility of the analyses described in the paper.
