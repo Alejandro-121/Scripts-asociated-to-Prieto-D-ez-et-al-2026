@@ -16,7 +16,8 @@ This repository contains all the bioinformatic scripts used in the above publica
 ├── GATK_haploid/          # Variant calling pipeline (haploid genomes)
 ├── parse-mutations-eif5a/ # Mutation parsing and genotype filtering
 ├── snpeff/                # VCF annotation with SnpEff
-└── sppIDer/               # Genomic composition analysis in hybrid strains
+├── sppIDer/               # Genomic composition analysis in hybrid strains
+└── grouth_rate/           # Curve analisys script
 ```
 
 ---
@@ -83,6 +84,10 @@ Key scripts:
 Dependencies: BWA, SAMtools, BEDTools, Python 3, R (`ggplot2`, `data.table`, `modes`).
 
 This pipeline covers diferents uses in the asociated paper of this repo it was only used to verify the relative ploidy of the samples. 
+
+---
+## grouth rate
+R script for calculating the maximum specific growth rate (μ) and doubling time of bacterial cultures from OD measurements in microplate format. For each biological replicate, the script identifies the optimal exponential growth window via exhaustive linear regression on log-transformed OD values and exports the results to Excel.
 
 ---
 
