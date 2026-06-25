@@ -88,7 +88,7 @@ Dependencies: BWA, SAMtools, BEDTools, Python 3, R (`ggplot2`, `data.table`, `mo
 This pipeline covers diferents uses in the asociated paper of this repo it was only used to verify the relative ploidy of the samples. 
 
 ---
-## grouth rate
+## growth rate
 R script for calculating the maximum specific growth rate (μ) and doubling time of cultures from OD measurements in microplate format. For each biological replicate, the script identifies the optimal exponential growth window via exhaustive linear regression on log-transformed OD values and exports the results to Excel.
 
 ---
