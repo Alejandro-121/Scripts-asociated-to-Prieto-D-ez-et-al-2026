@@ -1,6 +1,6 @@
 # Growth Rate Analysis
 
-R script for calculating the maximum specific growth rate (μ) and doubling time of bacterial cultures from OD measurements in microplate format. For each biological replicate, the script identifies the optimal exponential growth window via exhaustive linear regression on log-transformed OD values and exports the results to Excel.
+R script for calculating the maximum specific growth rate (μ) and doubling time of cultures from OD measurements in microplate format. For each biological replicate, the script identifies the optimal exponential growth window via exhaustive linear regression on log-transformed OD values and exports the results to Excel.
 
 ---
 
