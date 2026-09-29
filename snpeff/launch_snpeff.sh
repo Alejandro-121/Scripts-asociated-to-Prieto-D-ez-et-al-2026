@@ -11,7 +11,7 @@ for file in *.vcf.gz; do
     tabix -p vcf "$file"                          
     mkdir -p "${prefix}_dir"
 
-    java -jar snpEff.jar -v R64-1-1_sgd \    
+    java -jar snpEff.jar -v R64-1-1_sgd \
         -stats "${prefix}.txt" \
         -csvStats "${prefix}.csv" \
         "$file" > "anotated_${prefix}.vcf"
