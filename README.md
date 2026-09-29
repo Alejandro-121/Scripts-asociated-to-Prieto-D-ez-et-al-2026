@@ -16,9 +16,9 @@ This repository contains all the bioinformatic scripts used in the above publica
 ```
 .
 ├── GATK_haploid/          # Variant calling pipeline (haploid genomes)
-├── grouth_rate/           # Curve analisys script
+├── growth_rate/           # Curve analisys script
 ├── snpeff/                # VCF annotation with SnpEff
-├── sppIDer/               # Genomic composition analysis in hybrid strains
+├── sppider/               # Genomic composition analysis in hybrid strains
 └── parse-mutations-eif5a/ # Mutation parsing and genotype filtering
 ```
 
@@ -78,7 +78,7 @@ The pipeline is based on the original sppIDer tool developed by GLBRC. For metho
 
 Key scripts:
 
-- `run_sppIDer_array_se.sh` — SLURM array launcher; handles PE and SE samples, merges multi-run data, and distributes work across jobs.
+- `run_sppIDer_array+se.sh` — SLURM array launcher; handles PE and SE samples, merges multi-run data, and distributes work across jobs.
 - `sppIDer.py` — core pipeline per sample (BWA mapping → coverage → depth statistics → plots)
 - `combineRefGenomes.py` — builds the combined multi-species reference FASTA and indexes.
 - `aggregate_sppIDer_report.py` — run after all samples are processed; produces a summary TSV and an interactive HTML report with per-sample species calls and quality flags.
