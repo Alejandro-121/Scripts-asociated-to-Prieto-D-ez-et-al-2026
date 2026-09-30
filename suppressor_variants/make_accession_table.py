@@ -58,7 +58,7 @@ def main():
         ws.column_dimensions[get_column_letter(j)].width = w
     ws.freeze_panes = "B2"
     wb.save(out + ".xlsx")
-    print(f"escrito: {out}.xlsx\n         {out}.tsv")
+    print(f"written: {out}.xlsx\n         {out}.tsv")
 
 
 if __name__ == "__main__":

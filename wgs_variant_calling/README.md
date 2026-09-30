@@ -30,7 +30,7 @@ The final VCF (`<output>/vcf/cohort.filtered.vcf.gz`) is annotated with `../snpe
 
 ## Usage
 
-Run every launcher from a login node with the `gatk` conda environment active; `-h` prints the full help (in Spanish).
+Run every launcher from a login node with the `gatk` conda environment active; `-h` prints the full help.
 
 ```bash
 conda activate gatk

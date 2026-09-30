@@ -1,17 +1,17 @@
 #!/bin/bash
 # =============================================================================
-# run_download_sra.sh — Descarga de reads WGS desde SRA (HPC Drago, SLURM)
+# run_download_sra.sh — Download of WGS reads from SRA (HPC Drago, SLURM)
 #
-# Paso 1: prefetch + fasterq-dump + pigz (array SLURM)
-# Paso 2: comprobación de pares R1/R2 y resumen de lecturas (job único)
+# Step 1: prefetch + fasterq-dump + pigz (SLURM array)
+# Step 2: R1/R2 pairing check and read summary (single job)
 #
-# Por defecto descarga el BioProject PRJNA1418127 (Prieto-Díez et al. 2026),
-# nombrando los FASTQ como las muestras de los VCF: SAMPLE_R1.fastq.gz / SAMPLE_R2.fastq.gz
+# By default it downloads BioProject PRJNA1418127 (Prieto-Díez et al. 2026), naming the
+# FASTQ files after the sample names used in the VCFs: SAMPLE_R1.fastq.gz / SAMPLE_R2.fastq.gz
 # =============================================================================
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# Valores por defecto
+# Defaults
 # ---------------------------------------------------------------------------
 OUTPUT_DIR=""
 ACC_FILE=""
@@ -23,35 +23,35 @@ CONDA_ENV="download"                  # pigz
 
 usage() {
     cat << USAGE
-Uso: $(basename "$0") -o OUTPUT_DIR [-a ACCESIONES.tsv] [-j MAX_JOBS] [-t THREADS] [-s PASO] [-h]
+Usage: $(basename "$0") -o OUTPUT_DIR [-a ACCESSIONS.tsv] [-j MAX_JOBS] [-t THREADS] [-s STEP] [-h]
 
-Descarga reads paired-end de SRA con prefetch + fasterq-dump y los comprime con pigz.
-Todo el trabajo se lanza a SLURM; este script solo genera y envía los jobs.
+Downloads paired-end reads from SRA with prefetch + fasterq-dump and compresses them with pigz.
+All work is submitted to SLURM; this script only writes and submits the jobs.
 
 Flags:
-  -o  Directorio de salida (obligatorio). FASTQ en OUTPUT_DIR/fastq, logs en OUTPUT_DIR/logs
-  -a  TSV con dos columnas: RUN<TAB>SAMPLE (opcional).
-      Por defecto: las 11 muestras de PRJNA1418127
-  -j  Límite total de jobs en cola (default: ${MAX_JOBS} = MaxJobsPU)
-  -t  Hilos por job para fasterq-dump y pigz (default: ${THREADS})
-  -s  Paso desde el que empezar (default: 1)
-        1 = descarga
-        2 = comprobación R1/R2
-  -h  Muestra esta ayuda
+  -o  Output directory (required). FASTQ in OUTPUT_DIR/fastq, logs in OUTPUT_DIR/logs
+  -a  TSV with two columns: RUN<TAB>SAMPLE (optional).
+      Default: the 11 samples of PRJNA1418127
+  -j  Maximum number of queued jobs (default: ${MAX_JOBS} = MaxJobsPU)
+  -t  Threads per job for fasterq-dump and pigz (default: ${THREADS})
+  -s  Step to start from (default: 1)
+        1 = download
+        2 = R1/R2 check
+  -h  Show this help
 
-Ejemplos:
+Examples:
   conda activate ${CONDA_ENV}
   $(basename "$0") -o /lustre/home/iata/aaguilar/eif5a/sra
   $(basename "$0") -o /lustre/home/iata/aaguilar/eif5a/sra -t 16
-  $(basename "$0") -o /lustre/home/iata/aaguilar/eif5a/sra -s 2      # solo comprobación
+  $(basename "$0") -o /lustre/home/iata/aaguilar/eif5a/sra -s 2      # check only
 
-Entorno: módulos '${MODULES}' (SRA Toolkit) + conda '${CONDA_ENV}' (pigz).
-Nota: los nodos de cálculo necesitan acceso a internet para prefetch.
+Environment: modules '${MODULES}' (SRA Toolkit) + conda '${CONDA_ENV}' (pigz).
+Note: compute nodes need internet access for prefetch.
 USAGE
 }
 
 # ---------------------------------------------------------------------------
-# Argumentos
+# Arguments
 # ---------------------------------------------------------------------------
 while getopts "o:a:j:t:s:h" opt; do
     case ${opt} in
@@ -66,41 +66,41 @@ while getopts "o:a:j:t:s:h" opt; do
 done
 
 if [[ -z "${OUTPUT_DIR}" ]]; then
-    echo "ERROR: falta el directorio de salida (-o)."
+    echo "ERROR: output directory missing (-o)."
     usage
     exit 1
 fi
 if ! [[ "${MAX_JOBS}" =~ ^[0-9]+$ && "${THREADS}" =~ ^[0-9]+$ && "${START_STEP}" =~ ^[12]$ ]]; then
-    echo "ERROR: -j y -t deben ser enteros y -s debe ser 1 o 2."
+    echo "ERROR: -j and -t must be integers and -s must be 1 or 2."
     exit 1
 fi
 
 # ---------------------------------------------------------------------------
-# Entorno
+# Environment
 # ---------------------------------------------------------------------------
 if [[ "${CONDA_DEFAULT_ENV:-}" != "${CONDA_ENV}" ]]; then
-    echo "AVISO: Activa el entorno conda '${CONDA_ENV}' antes de lanzar."
+    echo "WARNING: activate the conda environment '${CONDA_ENV}' before launching."
     echo "  conda activate ${CONDA_ENV}"
     exit 1
 fi
 if ! command -v pigz > /dev/null; then
-    echo "ERROR: 'pigz' no está en el entorno '${CONDA_ENV}'. Instálalo con:"
+    echo "ERROR: 'pigz' is not in the '${CONDA_ENV}' environment. Install it with:"
     echo "  conda install -n ${CONDA_ENV} -c conda-forge pigz"
     exit 1
 fi
 if ! type module > /dev/null 2>&1; then
-    echo "ERROR: el comando 'module' no está disponible en esta sesión."
+    echo "ERROR: the 'module' command is not available in this session."
     exit 1
 fi
-# Se comprueba en un subshell para no alterar los módulos de la sesión
+# Checked in a subshell so that the modules of the session are not changed
 if ! ( module purge && module load ${MODULES} && command -v prefetch && command -v fasterq-dump ) > /dev/null 2>&1; then
-    echo "ERROR: no se pudieron cargar prefetch/fasterq-dump con: module load ${MODULES}"
+    echo "ERROR: could not load prefetch/fasterq-dump with: module load ${MODULES}"
     echo "  module spider SRA-Toolkit"
     exit 1
 fi
 
 # ---------------------------------------------------------------------------
-# Directorios y lista de accesiones
+# Directories and accession list
 # ---------------------------------------------------------------------------
 OUTPUT_DIR=$(realpath -m "${OUTPUT_DIR}")
 FASTQ_DIR="${OUTPUT_DIR}/fastq"
@@ -108,10 +108,10 @@ mkdir -p "${FASTQ_DIR}" "${OUTPUT_DIR}/logs" "${OUTPUT_DIR}/tmp" "${OUTPUT_DIR}/
 
 LIST_FILE="${OUTPUT_DIR}/accessions.tsv"
 if [[ -n "${ACC_FILE}" ]]; then
-    [[ -f "${ACC_FILE}" ]] || { echo "ERROR: no existe ${ACC_FILE}"; exit 1; }
+    [[ -f "${ACC_FILE}" ]] || { echo "ERROR: ${ACC_FILE} not found"; exit 1; }
     grep -v -e '^#' -e '^[[:space:]]*$' "${ACC_FILE}" > "${LIST_FILE}"
 else
-    # PRJNA1418127 — RUN<TAB>SAMPLE (nombre usado en los VCF)
+    # PRJNA1418127 — RUN<TAB>SAMPLE (name used in the VCFs)
     cat > "${LIST_FILE}" << 'ACC'
 SRR37083327	WT
 SRR37083326	2-1
@@ -128,16 +128,16 @@ ACC
 fi
 
 TOTAL=$(wc -l < "${LIST_FILE}")
-[[ ${TOTAL} -gt 0 ]] || { echo "ERROR: la lista de accesiones está vacía."; exit 1; }
+[[ ${TOTAL} -gt 0 ]] || { echo "ERROR: the accession list is empty."; exit 1; }
 
-# Paso 2 es un job secuencial: se resta del pool de arrays
+# Step 2 is a single job: it is subtracted from the array pool
 NUM_SEQ_JOBS=1
 NUM_JOBS=$(( MAX_JOBS - NUM_SEQ_JOBS ))
 [[ ${NUM_JOBS} -gt ${TOTAL} ]] && NUM_JOBS=${TOTAL}
 [[ ${NUM_JOBS} -lt 1 ]] && { echo "ERROR: -j demasiado bajo."; exit 1; }
 
 # ---------------------------------------------------------------------------
-# Script SLURM — Paso 1: descarga (array)
+# SLURM script — Step 1: download (array)
 # ---------------------------------------------------------------------------
 SCRIPT1="${OUTPUT_DIR}/download_sra.slurm"
 cat > "${SCRIPT1}" << 'EOF'
@@ -166,16 +166,16 @@ THREADS=__THREADS__
 NUM_JOBS=__NUM_JOBS__
 TOTAL=$(wc -l < "${LIST_FILE}")
 
-echo "=== Descarga SRA ==="
+echo "=== SRA download ==="
 echo "Array Job ID: ${SLURM_ARRAY_JOB_ID}, Task ID: ${SLURM_ARRAY_TASK_ID}"
-echo "Inicio: $(date)"
+echo "Start: $(date)"
 echo "========================"
 
 ITEMS_PER_JOB=$(( (TOTAL + NUM_JOBS - 1) / NUM_JOBS ))
 START_LINE=$(( SLURM_ARRAY_TASK_ID * ITEMS_PER_JOB + 1 ))
 END_LINE=$(( START_LINE + ITEMS_PER_JOB - 1 ))
 [[ ${END_LINE} -gt ${TOTAL} ]] && END_LINE=${TOTAL}
-[[ ${START_LINE} -gt ${TOTAL} ]] && { echo "Sin items asignados"; exit 0; }
+[[ ${START_LINE} -gt ${TOTAL} ]] && { echo "No items assigned"; exit 0; }
 
 OK=0
 FAILED=0
@@ -186,16 +186,16 @@ while IFS=$'\t' read -r RUN SAMPLE; do
     R1="${FASTQ_DIR}/${SAMPLE}_R1.fastq.gz"
     R2="${FASTQ_DIR}/${SAMPLE}_R2.fastq.gz"
     echo
-    echo "[${N}/${N_BATCH}] Procesando: ${SAMPLE} (${RUN})"
-    echo "  Hora: $(date +%H:%M:%S)"
+    echo "[${N}/${N_BATCH}] Processing: ${SAMPLE} (${RUN})"
+    echo "  Time: $(date +%H:%M:%S)"
 
     if [[ -s "${R1}" && -s "${R2}" ]]; then
-        echo "  Ya descargado, se omite."
+        echo "  Already downloaded, skipped."
         OK=$(( OK + 1 ))
         continue
     fi
 
-    # set -e no actúa dentro de un 'if': cada paso se encadena con && para cortar al primer fallo
+    # set -e does not act inside an 'if': steps are chained with && to stop at the first failure
     if echo "  [1/4] prefetch..." \
         && prefetch "${RUN}" --output-directory "${CACHE_DIR}" --max-size 20G \
         && echo "  [2/4] fasterq-dump..." \
@@ -203,7 +203,7 @@ while IFS=$'\t' read -r RUN SAMPLE; do
             --outdir "${TMP_DIR}/${RUN}" --temp "${TMP_DIR}/${RUN}" \
         && echo "  [3/4] pigz..." \
         && pigz -p "${THREADS}" "${TMP_DIR}/${RUN}/${RUN}_1.fastq" "${TMP_DIR}/${RUN}/${RUN}_2.fastq" \
-        && echo "  [4/4] renombrando y limpiando..." \
+        && echo "  [4/4] renaming and cleaning up..." \
         && mv "${TMP_DIR}/${RUN}/${RUN}_1.fastq.gz" "${R1}" \
         && mv "${TMP_DIR}/${RUN}/${RUN}_2.fastq.gz" "${R2}" \
         && rm -rf "${CACHE_DIR:?}/${RUN}" "${TMP_DIR:?}/${RUN}"; then
@@ -218,10 +218,10 @@ done < <(sed -n "${START_LINE},${END_LINE}p" "${LIST_FILE}")
 
 echo
 echo "========================"
-echo "Resumen tarea ${SLURM_ARRAY_TASK_ID}:"
-echo "  Procesados: ${OK}"
-echo "  Fallidos:   ${FAILED}"
-echo "  Fin: $(date)"
+echo "Task ${SLURM_ARRAY_TASK_ID} summary:"
+echo "  Processed: ${OK}"
+echo "  Failed:    ${FAILED}"
+echo "  End: $(date)"
 echo "========================"
 [[ ${FAILED} -eq 0 ]]
 EOF
@@ -238,7 +238,7 @@ sed -i \
     "${SCRIPT1}"
 
 # ---------------------------------------------------------------------------
-# Script SLURM — Paso 2: comprobación R1/R2 (job único)
+# SLURM script — Step 2: R1/R2 check (single job)
 # ---------------------------------------------------------------------------
 SCRIPT2="${OUTPUT_DIR}/check_fastq.slurm"
 cat > "${SCRIPT2}" << EOF
@@ -258,9 +258,9 @@ set -u
 
 SUMMARY="${OUTPUT_DIR}/fastq_summary.tsv"
 
-echo "=== Comprobación FASTQ ==="
+echo "=== FASTQ check ==="
 echo "Job ID: \${SLURM_JOB_ID}"
-echo "Inicio: \$(date)"
+echo "Start: \$(date)"
 echo "========================"
 
 echo -e "run\tsample\treads_R1\treads_R2\tstatus" > "\${SUMMARY}"
@@ -287,17 +287,17 @@ done < "${LIST_FILE}"
 
 echo
 echo "========================"
-echo "Resumen:"
-echo "  Correctos: \${OK}"
-echo "  Fallidos:  \${FAILED}"
-echo "  Tabla:     \${SUMMARY}"
-echo "  Fin: \$(date)"
+echo "Summary:"
+echo "  OK:        \${OK}"
+echo "  Failed:    \${FAILED}"
+echo "  Table:     \${SUMMARY}"
+echo "  End: \$(date)"
 echo "========================"
 [[ \${FAILED} -eq 0 ]]
 EOF
 
 # ---------------------------------------------------------------------------
-# Lanzamiento
+# Submission
 # ---------------------------------------------------------------------------
 PREV_DEP=""
 JOB_LINES=()
@@ -306,31 +306,31 @@ if [[ "${START_STEP}" -le 1 ]]; then
     OUTPUT=$(sbatch ${PREV_DEP} "${SCRIPT1}")
     JOB1_ID=$(echo "${OUTPUT}" | awk '{print $NF}')
     PREV_DEP="--dependency=afterok:${JOB1_ID}"
-    JOB_LINES+=(" Job 1 (${JOB1_ID}): descarga SRA, array 0-$(( NUM_JOBS - 1 ))")
+    JOB_LINES+=(" Job 1 (${JOB1_ID}): SRA download, array 0-$(( NUM_JOBS - 1 ))")
     N_SUBMITTED=$(( N_SUBMITTED + NUM_JOBS ))
 fi
 if [[ "${START_STEP}" -le 2 ]]; then
     OUTPUT=$(sbatch ${PREV_DEP} "${SCRIPT2}")
     JOB2_ID=$(echo "${OUTPUT}" | awk '{print $NF}')
-    JOB_LINES+=(" Job 2 (${JOB2_ID}): comprobación R1/R2${PREV_DEP:+ (${PREV_DEP#--dependency=})}")
+    JOB_LINES+=(" Job 2 (${JOB2_ID}): R1/R2 check${PREV_DEP:+ (${PREV_DEP#--dependency=})}")
     N_SUBMITTED=$(( N_SUBMITTED + 1 ))
 fi
 
 echo "============================================="
-echo " Resumen"
+echo " Summary"
 echo "============================================="
-echo " Accesiones:   ${LIST_FILE} (${TOTAL} muestras)"
-echo " Salida FASTQ: ${FASTQ_DIR}"
-echo " Hilos/job:    ${THREADS}"
-echo " Paso inicial: ${START_STEP}"
-echo " Entorno:      module load ${MODULES} + conda ${CONDA_ENV}"
+echo " Accessions:   ${LIST_FILE} (${TOTAL} samples)"
+echo " Output FASTQ: ${FASTQ_DIR}"
+echo " Threads/job:  ${THREADS}"
+echo " Start step:   ${START_STEP}"
+echo " Environment:  module load ${MODULES} + conda ${CONDA_ENV}"
 echo "---------------------------------------------"
 printf '%s\n' "${JOB_LINES[@]}"
 echo "---------------------------------------------"
 echo " Total jobs: ${N_SUBMITTED} / ${MAX_JOBS}"
 echo "============================================="
 echo
-echo "Comandos útiles:"
+echo "Useful commands:"
 echo "  squeue -u \$(whoami)"
 echo "  tail -f ${OUTPUT_DIR}/logs/sra_dl_*.out"
 echo "  grep -l 'ERROR' ${OUTPUT_DIR}/logs/*.err"

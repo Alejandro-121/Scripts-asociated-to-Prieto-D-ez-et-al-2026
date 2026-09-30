@@ -35,7 +35,7 @@ PROTEIN_ALTERING = ("missense_variant", "frameshift_variant", "stop_gained", "st
                     "splice_acceptor", "splice_donor")
 STATUS_ORDER = ["suppressor-specific", "not testable", "background"]
 FILLS = {"suppressor-specific": "E2EFDA", "not testable": "EDEDED", "background": "F8CBAD"}
-# (chrom, pos, REF, ALT tras recortar) -> validación experimental descrita en el manuscrito (Fig. 4)
+# (chrom, pos, REF, ALT after trimming) -> experimental validation described in the manuscript (Fig. 4)
 CRISPR = "Reconstructed by CRISPR-Cas9 in the parental {} strain (Sanger-confirmed); reproduces suppression and TIF51B derepression (Fig. 4)"
 VALIDATED = {
     ("chrXVI", 679850, "G", "T"): CRISPR.format("tif51A-1 ROX1-13myc") + " [SNP1]",
@@ -170,7 +170,7 @@ def classify(ctrl, a):
 
 
 def evidence(x, a):
-    """Motivo por el que la evidencia en el supresor es insuficiente ('' si es suficiente)."""
+    """Reason why the evidence in the suppressor is insufficient ('' if it is sufficient)."""
     if x["filt"] != "PASS":
         return "fails GATK hard filters"
     if any(x["car"][s]["dp"] == 0 or x["car"][s]["alt"] / x["car"][s]["dp"] < a.min_af for s in x["carriers"]):
@@ -186,7 +186,7 @@ def main():
     names, dubious = current_names(a.gff)
     missing = [s for s in list(CONTROLS) + SUPPRESSORS if s not in samples]
     if missing:
-        sys.exit(f"ERROR: faltan muestras en el VCF: {missing}")
+        sys.exit(f"ERROR: samples missing from the VCF: {missing}")
 
     rows = []
     for chrom, pos, ref, alts, qual, filt, info, gts in records:
@@ -221,7 +221,7 @@ def main():
         x["validation"] = VALIDATED.get((x["chrom"], x["pos"], x["ref"], x["alt"]), "Not tested")
         x["fig"] = x["status"] == "suppressor-specific" and x["protein"]
 
-    # la tabla solo lleva las específicas con evidencia suficiente; el resto queda como recuento en Summary
+    # the table only lists suppressor-specific variants with sufficient evidence; the rest are counted in Summary
     tally = Counter(x["status"] for x in rows)
     specific = [x for x in rows if x["status"] == "suppressor-specific"]
     tally.update(x["weak"] for x in specific if x["weak"])
@@ -277,7 +277,7 @@ def write_outputs(a, rows, filters, tally):
     ws.freeze_panes = "D2"
     ws.auto_filter.ref = ws.dimensions
 
-    # Summary: cómo se llegó a las específicas y mutaciones que alteran la proteína por supresor
+    # Summary: how the suppressor-specific variants were reached, and protein-altering mutations per suppressor
     ws2 = wb.create_sheet("Summary")
     ws2.append(["Candidate alleles (in >= 1 suppressor, not genotyped in any control)", sum(tally[s] for s in STATUS_ORDER)])
     ws2.append(["  excluded: background (variant present in a control)", tally["background"]])
@@ -345,13 +345,13 @@ def write_outputs(a, rows, filters, tally):
         ws3.cell(row=ws3.max_row, column=1).alignment = Alignment(wrap_text=True, vertical="top")
     ws3.column_dimensions["A"].width = 130
     wb.save(a.out + ".xlsx")
-    print(f"escrito: {a.out}.xlsx\n         {a.out}.tsv")
+    print(f"written: {a.out}.xlsx\n         {a.out}.tsv")
 
 
 def report(rows, tally):
-    print("candidatas:", sum(tally[s] for s in STATUS_ORDER), "|", ", ".join(f"{k}: {v}" for k, v in tally.items()),
-          "| en la tabla:", len(rows))
-    print("\nEspecíficas de supresor que alteran la proteína:")
+    print("candidates:", sum(tally[s] for s in STATUS_ORDER), "|", ", ".join(f"{k}: {v}" for k, v in tally.items()),
+          "| in the table:", len(rows))
+    print("\nProtein-altering suppressor-specific variants:")
     for x in rows:
         if x["status"] == "suppressor-specific" and x["protein"]:
             val = "CRISPR" if x["validation"] != "Not tested" else ""
