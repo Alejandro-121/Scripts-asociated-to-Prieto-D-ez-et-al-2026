@@ -15,56 +15,26 @@ This repository contains all the bioinformatic scripts used in the above publica
 
 ```
 .
-├── GATK_haploid/          # Variant calling pipeline (haploid genomes)
-├── growth_rate/           # Curve analisys script
-├── snpeff/                # VCF annotation with SnpEff
-├── sppider/               # Genomic composition analysis in hybrid strains
-└── parse-mutations-eif5a/ # Mutation parsing and genotype filtering
+├── wgs_variant_calling/   # WGS pipeline: download, trimming, mapping, BQSR, joint variant calling (SLURM)
+├── snpeff/                # Custom SnpEff database (R64-1-1) and VCF annotation
+├── suppressor_variants/   # Suppressor-specific variants, Supplementary Tables S6-S7 and Figure 3a
+├── sppider/               # Genomic composition / ploidy analysis
+└── growth_rate/           # Growth curve analysis
 ```
 
 ---
 
-## GATK_haploid
+## WGS workflow
 
-GATK-based variant calling pipeline designed for haploid genomes, prepared for execution on HPC systems (tested on HPC-Drago). The workflow is split into two stages with a manual QC checkpoint in between.
+`wgs_variant_calling` → `snpeff` → `suppressor_variants`
 
-Key scripts:
+1. **`wgs_variant_calling/`** — SLURM pipeline for the 11 sequenced strains (wild-type BY4741, parental *tif51A-1* and *tif51A-3*, and eight suppressors): SRA download, Trim Galore, BWA-MEM2 + MarkDuplicates, bootstrapped BQSR, and GATK HaplotypeCaller in per-base GVCF mode (haploid) followed by joint genotyping with GenotypeGVCFs and hard filtering. Joint genotyping gives every strain a genotype and its read depth at every variant site. See [`wgs_variant_calling/README.md`](wgs_variant_calling/README.md).
+2. **`snpeff/`** — builds a SnpEff database from the S288C R64-1-1 reference and SGD annotation (validated against SGD coding and protein sequences) and annotates the joint VCF. See [`snpeff/README.md`](snpeff/README.md).
+3. **`suppressor_variants/`** — defines suppressor-specific variants by comparison with the three sequenced control strains (a control must be genotyped as reference with sufficient coverage; no-calls are never treated as reference), and produces Supplementary Table S6 (variants), Supplementary Table S7 (NCBI accessions) and Figure 3a. See [`suppressor_variants/README.md`](suppressor_variants/README.md).
 
-- `variant_calling_1.py` — alignment, duplicate marking, and pre-BQSR variant discovery.
-- `variant_calling_2.py` — BQSR, final variant calling, and hard filtering.
-- `variant_calling_fun.py` — helper functions used by the two scripts above.
-- `slurm_variant_calling.sh` — SLURM wrapper for cluster submission.
-- `plot_metrix.rmd` — R Markdown report to visualize QC metrics and guide filter thresholds.
+Data: BioProject PRJNA1418127 (SRA runs SRR37083317–SRR37083327).
 
-Dependencies: GATK 4.x, BWA, SAMtools, Picard, R (`ggplot2`, `cowplot`, `gridExtra`).
-
----
-
-## parse-mutations-eif5a
-
-Pipeline to analyze variants from a consolidated VCF (`merged.vcf`) and generate per-sample mutation and allele tables, as well as genotype-based filters. Hardcoded to the samples used in the paper.
-
-Key scripts:
-
-- `01_variant_extraction.py` — reads `merged.vcf`, extracts `ANN` annotations, and outputs `mutation_wide_table_with_alleles.csv`.
-- `02_genotype_based_filtering.R` — filters by genotype patterns, adds SGD gene annotations, and generates tables and plots.
-- `run_pipeline.sh` — orchestrates both steps and validates dependencies.
-- `environment.yml` — Conda environment definition (Python + R + Bioconductor packages).
-
-Dependencies: Python 3.10+ (`pandas`), R 4.3+ (`readr`, `dplyr`, `ggplot2`, `pheatmap`, `org.Sc.sgd.db`, ...). See `environment.yml` for the full list.
-
----
-
-## snpeff
-
-Scripts to annotate VCF files using SnpEff against the *S. cerevisiae* R64-1-1 SGD database.
-
-Key scripts:
-
-- `launch_snpeff.sh` — loops over all VCF files in the directory, compresses and indexes them with `bgzip`/`tabix`, and annotates each one with SnpEff.
-- `change_head.py` — renames FASTA headers of the S288C reference genome to standard chromosome names (`chrI`, `chrII`, …, `chrMito`) required by SnpEff.
-
-Dependencies: SnpEff, bgzip, tabix (HTSlib), Python 3.
+> This workflow replaces the per-sample variant calling and genotype-parsing scripts of the first submission (`GATK_haploid/`, `parse-mutations-eif5a/`, `snpeff/launch_snpeff.sh`, `snpeff/change_head.py`), which remain available in the git history.
 
 ---
 

@@ -1,65 +1,38 @@
- # Helper Scripts
+# SnpEff annotation
 
-A small collection of utility scripts for preparing and annotating yeast (*S. cerevisiae*) genomic data.
+`annotate_snpeff.sh` builds a custom SnpEff database for *S. cerevisiae* S288C **R64-1-1** and annotates the joint VCF produced by `../wgs_variant_calling`.
 
----
+## Why a custom database
+The database is built from exactly the files used for the alignment, so that coordinates, sequence and annotation all come from the same release:
 
-## Scripts
+- **Genome:** the reference FASTA used for mapping (nuclear chromosomes `chrI`…`chrXVI`, identical to SGD `S288C_reference_sequence_R64-1-1_20110203.fsa`).
+- **Annotation:** SGD GFF3 `saccharomyces_cerevisiae_R64-1-1_20110208.gff`, restricted to the nuclear chromosomes and without its embedded `##FASTA` section. The GFF uses the systematic name in `Name` and the standard name in `gene=`; the script sets `Name` to the standard name so that SnpEff reports e.g. `ROX1` instead of `YPR065W`.
+- **Check:** coding and protein sequences are validated against SGD `orf_coding_all` and `orf_trans_all` (R64-1-1: 6,575 transcripts, 0 errors). The script stops if the check reports errors.
 
-### `rename_headers.py`
+Because the reference FASTA already uses the GFF chromosome names, no header renaming is needed.
 
-Renames the FASTA headers of the S288C reference genome to short chromosome names (`chrI`, `chrII`, … `chrMito`).
+## Usage
+Download and unpack the SGD R64-1-1 bundle (`S288C_reference_genome_R64-1-1_20110203.tgz`) and run:
 
-**Usage:**
 ```bash
-python rename_headers.py
+conda create -n snpeff -c conda-forge -c bioconda snpeff bcftools htslib
+conda activate snpeff
+
+bash annotate_snpeff.sh \
+    -r ref/nuclear.fasta \
+    -g S288C_reference_genome_R64-1-1_20110203 \
+    -v vc_final/vcf/cohort.filtered.vcf.gz \
+    -d snpeff_db
 ```
 
-Edit the `os.chdir(...)` path and `in_fasta` variable at the top of the script to point to your local copy of the reference genome before running.
+- `-r` reference FASTA used for mapping
+- `-g` SGD R64-1-1 directory (GFF, `orf_coding_all`, `orf_trans_all`)
+- `-v` VCF to annotate (bgzip)
+- `-d` directory for `snpEff.config` and the database
+- `-s 2` annotate only, reusing an existing database
 
-**Input:** `S288C_reference_sequence_R64-1-1_20110203.fsa`  
-**Output:** `new_head.fasta`
+## Outputs (next to the input VCF)
+- `*.ann.vcf.gz` (+ `.tbi`) — annotated VCF (`ANN`, `LOF`, `NMD` fields)
+- `snpeff_summary.html`, `snpeff_stats.csv`, `snpeff.log`
 
----
-
-### `run_snpeff.sh`
-
-Batch-annotates VCF files in the current directory using [SnpEff](https://pcingola.github.io/SnpEff/) against the `R64-1-1_sgd` database.
-
-For each `.vcf` file it:
-1. Compresses it with `bgzip` (in parallel)
-2. Indexes it with `tabix`
-3. Runs SnpEff annotation
-4. Organises outputs (annotated VCF, stats, CSV) into a per-sample directory
-5. Copies the annotated VCF to `out_vcf/`
-
-**Usage:**
-```bash
-# Place run_snpeff.sh and snpEff.jar in the same directory as your .vcf files, then:
-bash run_snpeff.sh
-```
-
-**Dependencies:** `bgzip`, `tabix`, `parallel`, `java`
-
----
-
-## Installing SnpEff
-
-Download the latest version from the official site:
-
-> https://pcingola.github.io/SnpEff/#download
-
-Direct download (latest stable):
-```bash
-wget https://snpeff.blob.core.windows.net/versions/snpEff_latest_core.zip
-unzip snpEff_latest_core.zip
-```
-
-Then download the yeast database:
-```bash
-java -jar snpEff.jar download R64-1-1_sgd
-```
-
-Place `snpEff.jar` in the same directory as `run_snpeff.sh`, or adjust the path inside the script.
-
----
+Tested with SnpEff 5.4c.
