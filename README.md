@@ -5,7 +5,7 @@
 
 **Citation:** Prieto-Díez et al.
 
-**Prepublished DOI:** In porcess
+**Prepublished DOI:** In process
 
 This repository contains all the bioinformatic scripts used in the above publication. The code is provided to facilitate reproducibility of the analyses described in the paper.
 
@@ -42,7 +42,7 @@ Data: BioProject PRJNA1418127 (SRA runs SRR37083317–SRR37083327).
 
 Genomic composition analysis pipeline for detecting hybrid strains and species contributions from short-read sequencing data. Reads are mapped against a combined multi-species reference genome; coverage depth per species, chromosome, and sliding window is then used to identify hybrids, introgressions, and contamination.
 
-This implementation is adapted for HPC-Drago and extends the original pipeline with a SLURM array launcher, automatic SE/PE detection, multi-run merging, and an aggregated HTML report across all samples. For full usage details see [`sppIDer/README.md`](sppIDer/README.md).
+This implementation is adapted for HPC-Drago and extends the original pipeline with a SLURM array launcher, automatic SE/PE detection, multi-run merging, and an aggregated HTML report across all samples. For full usage details see [`sppider/README.md`](sppider/README.md).
 
 The pipeline is based on the original sppIDer tool developed by GLBRC. For methodology, citation, and upstream documentation see [https://github.com/GLBRC/sppIDer](https://github.com/GLBRC/sppIDer).
 
@@ -55,7 +55,7 @@ Key scripts:
 
 Dependencies: BWA, SAMtools, BEDTools, Python 3, R (`ggplot2`, `data.table`, `modes`).
 
-This pipeline covers diferents uses in the asociated paper of this repo it was only used to verify the relative ploidy of the samples. 
+This pipeline has several uses; in the associated paper it was only used to verify the relative ploidy of the samples.
 
 ---
 ## growth rate
